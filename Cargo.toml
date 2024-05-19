@@ -1,0 +1,9 @@
+[package]
+name = "trapify"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+macroquad = "0.4"
+# change this to normal release once this is merged: https://github.com/optozorax/egui-macroquad/pull/46
+egui-macroquad = { git = "https://github.com/gold-silver-copper/egui-macroquad" }
