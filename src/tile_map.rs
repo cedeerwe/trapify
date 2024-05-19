@@ -23,7 +23,7 @@ pub fn draw() {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TileMapPos {
     pub x: u32,
     pub y: u32,

@@ -10,6 +10,11 @@ pub struct GameState {
     is_paused: bool,
     is_game_over: bool,
     selected_tile: Option<TileMapPos>,
+    traps: HashMap<TileMapPos, Trap>,
+}
+
+pub enum Trap {
+    Periodic { timer: Timer, damage: f32 },
 }
 
 impl GameState {
@@ -28,6 +33,7 @@ impl GameState {
             is_paused: false,
             is_game_over: false,
             selected_tile: None,
+            traps: HashMap::default(),
         }
     }
 }
@@ -181,6 +187,35 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
         );
     }
 
+    // draw traps
+    for (tile_map_pos, trap) in state.traps.iter() {
+        let color = match trap {
+            Trap::Periodic { .. } => BLUE,
+        };
+        draw_circle(tile_map_pos.into_absolute_mid(), 0.5, color, 0)
+    }
+
+    // deal trap damage
+    for (tile_map_pos, trap) in state.traps.iter_mut() {
+        match trap {
+            Trap::Periodic { timer, damage } => {
+                timer.tick_secs(delta);
+                if timer.just_finished() {
+                    draw_circle(tile_map_pos.into_absolute_mid(), 0.5, RED, 2);
+                    // TODO: Potentially remake this to be more efficient using a hashmap of positions to list of enemies
+                    state.enemies.retain_mut(|enemy| {
+                        if let Some(enemy_tile_pos) = TileMapPos::from_absolute(enemy.position) {
+                            if tile_map_pos == &enemy_tile_pos {
+                                return !enemy.hp.take_damage_and_die(*damage);
+                            }
+                        }
+                        true
+                    });
+                }
+            }
+        }
+    }
+
     egui::panel::TopBottomPanel::bottom("spreadsheet")
         .exact_height(300.)
         .show(egui(), |ui| {
@@ -212,6 +247,45 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                         state.player.hp.reset();
                     }
                 });
+                if let Some(tile_map_pos) = state.selected_tile {
+                    left_panel.heading(&format!("Trap on ({},{})", tile_map_pos.x, tile_map_pos.y));
+                    match state.traps.get_mut(&tile_map_pos) {
+                        None => {
+                            if left_panel.button("Build").clicked() {
+                                state.traps.insert(
+                                    tile_map_pos,
+                                    Trap::Periodic {
+                                        timer: Timer::from_seconds(1., true),
+                                        damage: 1.,
+                                    },
+                                );
+                            }
+                        }
+                        Some(trap) => match trap {
+                            Trap::Periodic { timer, damage } => {
+                                left_panel.label("Periodic");
+                                left_panel.horizontal(|ui| {
+                                    ui.label("Damage:");
+                                    ui.add(
+                                        egui::DragValue::new(damage)
+                                            .speed(1.0)
+                                            .clamp_range(1. ..=100.),
+                                    );
+                                });
+                                left_panel.horizontal(|ui| {
+                                    ui.label("Frequency (s):");
+                                    let mut spawn_cooldown = timer.duration().as_secs_f32();
+                                    ui.add(
+                                        egui::DragValue::new(&mut spawn_cooldown)
+                                            .speed(0.1)
+                                            .clamp_range(0.1..=100.),
+                                    );
+                                    timer.set_duration(Duration::from_secs_f32(spawn_cooldown));
+                                });
+                            }
+                        },
+                    }
+                }
 
                 let right_panel = &mut columns[1];
                 right_panel.heading("Enemy spawner");
