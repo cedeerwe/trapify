@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-macroquad = "0.4"
-# change this to normal release once this is merged: https://github.com/optozorax/egui-macroquad/pull/46
-egui-macroquad = { git = "https://github.com/gold-silver-copper/egui-macroquad" }
+comfy = "0.4.0"
+
+[profile.dev]
+opt-level = 1
+[profile.dev.package."*"]
+opt-level = 1

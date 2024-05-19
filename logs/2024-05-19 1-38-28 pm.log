@@ -1,0 +1,18 @@
+2024-05-19T15:38:28.799028+02:00 INFO symphonia_core::probe - found the format marker [4f, 67, 67, 53] @ 0+2 bytes.
+2024-05-19T15:38:28.799235+02:00 INFO symphonia_format_ogg::demuxer - starting new physical stream
+2024-05-19T15:38:28.799263+02:00 INFO symphonia_format_ogg::demuxer - selected vorbis mapper for stream with serial=0x50dc4f71
+2024-05-19T15:38:28.800427+02:00 INFO comfy - TRACING DISABLED
+2024-05-19T15:38:28.963781+02:00 INFO wgpu_core::instance - Adapter Metal AdapterInfo { name: "Apple M1 Pro", vendor: 0, device: 0, device_type: IntegratedGpu, driver: "", driver_info: "", backend: Metal }
+2024-05-19T15:38:28.963878+02:00 INFO comfy_wgpu::device - Using adapter: "Apple M1 Pro"
+2024-05-19T15:38:28.965989+02:00 INFO comfy_wgpu::device - Supported formats: [Bgra8UnormSrgb, Bgra8Unorm, Rgba16Float, Rgb10a2Unorm]
+2024-05-19T15:38:28.966022+02:00 INFO comfy_wgpu::device - ACTUAL PRESENT MODE: Fifo
+2024-05-19T15:38:28.967890+02:00 WARN egui_wgpu::renderer - Detected a linear (sRGBA aware) framebuffer Bgra8UnormSrgb. egui prefers Rgba8Unorm or Bgra8Unorm
+2024-05-19T15:38:29.046384+02:00 INFO comfy_wgpu::renderer - Initializing with scale factor: 2
+2024-05-19T15:38:29.046719+02:00 INFO comfy_core::render_queues - Generated ShaderId: 0
+2024-05-19T15:38:29.095765+02:00 INFO comfy_core::render_queues - Generated ShaderId: 1
+2024-05-19T15:38:29.149744+02:00 INFO comfy_core::render_queues - Generated ShaderId: 2
+2024-05-19T15:38:29.200574+02:00 INFO comfy_core::render_queues - Generated ShaderId: 3
+2024-05-19T15:38:29.200593+02:00 INFO comfy_core::render_queues - Generated ShaderId: 4
+2024-05-19T15:38:29.270036+02:00 INFO comfy_core::render_queues - Generated ShaderId: 5
+2024-05-19T15:38:29.346875+02:00 INFO comfy_wgpu - CREATED SHADER, GOT ShaderModule { context: ContextWgpuCore { type: "Native" }, id: ObjectId { id: Some(4611686022722355206), global_id: Some(4611686022722355206) }, data: Any { .. } }
+2024-05-19T15:38:29.409930+02:00 INFO comfy_wgpu::renderer - Loading EFFECT: copy
