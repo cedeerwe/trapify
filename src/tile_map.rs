@@ -6,7 +6,7 @@ pub const COLUMNS: u32 = 28; // ZOOM is setup to 30, 1 margin on both sides
 
 pub fn draw() {
     // TODO: 1/64 does not work well in general
-    let draw_grid_line = |p1, p2| draw_line(p1, p2, 1. / 64., DARKGRAY, 0);
+    let draw_grid_line = |p1, p2| draw_line(p1, p2, 1. / 64., DARKGRAY, 1);
 
     let x_start = x_min();
     let x_end = x_max();
@@ -23,6 +23,7 @@ pub fn draw() {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct TileMapPos {
     pub x: u32,
     pub y: u32,
@@ -38,7 +39,7 @@ pub fn x_max() -> f32 {
 
 pub fn x_from_absolute(x: f32) -> Option<u32> {
     let x = (x - x_min()).div_euclid(TILE_SIZE);
-    if x >= 0. && x <= COLUMNS as f32 {
+    if x >= 0. && x < COLUMNS as f32 {
         Some(x as u32)
     } else {
         None
@@ -65,6 +66,15 @@ pub fn y_min() -> f32 {
     y_max() - (ROWS as f32) * TILE_SIZE
 }
 
+pub fn y_from_absolute(y: f32) -> Option<u32> {
+    let y = (y - y_min()).div_euclid(TILE_SIZE);
+    if y >= 0. && y < ROWS as f32 {
+        Some(y as u32)
+    } else {
+        None
+    }
+}
+
 pub fn y_into_absolute_start(y: u32) -> f32 {
     y_min() + (y as f32) * TILE_SIZE
 }
@@ -75,15 +85,6 @@ pub fn y_into_absolute_mid(y: u32) -> f32 {
 
 pub fn y_into_absolute_end(y: u32) -> f32 {
     y_into_absolute_start(y) + TILE_SIZE
-}
-
-pub fn y_from_absolute(y: f32) -> Option<u32> {
-    let y = (y - y_min()).div_euclid(TILE_SIZE);
-    if y >= 0. && y <= ROWS as f32 {
-        Some(y as u32)
-    } else {
-        None
-    }
 }
 
 impl TileMapPos {

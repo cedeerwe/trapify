@@ -9,6 +9,7 @@ pub struct GameState {
     player: Player,
     is_paused: bool,
     is_game_over: bool,
+    selected_tile: Option<TileMapPos>,
 }
 
 impl GameState {
@@ -26,6 +27,7 @@ impl GameState {
             },
             is_paused: false,
             is_game_over: false,
+            selected_tile: None,
         }
     }
 }
@@ -87,13 +89,13 @@ impl Enemy {
             Vec2::new(x_mid, self.position.y),
             Vec2::new(x_size, self.size),
             RED,
-            1,
+            10,
         );
         draw_rect(
             Vec2::new(x_mid, y_mid),
             Vec2::new(x_size, y_size),
             DARKGREEN,
-            2,
+            11,
         );
     }
 }
@@ -166,6 +168,19 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
         egui::Window::new("GAME OVER").show(egui(), |ui| ui.heading("GAME OVER!"));
     }
 
+    if is_mouse_button_pressed(MouseButton::Left) {
+        state.selected_tile = tile_map::TileMapPos::from_absolute(mouse_world())
+    }
+
+    if let Some(tile_map_pos) = state.selected_tile.as_ref() {
+        draw_rect(
+            tile_map_pos.into_absolute_mid(),
+            Vec2::new(tile_map::TILE_SIZE, tile_map::TILE_SIZE),
+            PINK,
+            0,
+        );
+    }
+
     egui::panel::TopBottomPanel::bottom("spreadsheet")
         .exact_height(300.)
         .show(egui(), |ui| {
@@ -190,7 +205,7 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                         true => "Unpause",
                         false => "Pause",
                     };
-                    if ui.button(pause_text).clicked() {
+                    if ui.button(pause_text).clicked() && !state.is_game_over {
                         state.is_paused = !state.is_paused
                     };
                     if ui.button("Reset HP").clicked() {
