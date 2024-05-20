@@ -21,38 +21,6 @@ pub struct GameState {
     trap_tiles: HashMap<TileMapPos, TrapTile>,
 }
 
-pub enum TrapTile {
-    Built(Trap),
-    ToBeBuild(TrapLabel),
-}
-
-pub enum Trap {
-    Simple {
-        cooldown: Timer,
-        damage: f32,
-    },
-    DamageOverTime {
-        cooldown: Timer,
-        duration_secs: f32,
-        damage_per_second: f32,
-    },
-}
-
-#[derive(Debug, PartialEq)]
-pub enum TrapLabel {
-    Simple,
-    DamageOverTime,
-}
-
-impl TrapLabel {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            TrapLabel::Simple => "Simple",
-            TrapLabel::DamageOverTime => "DamageOverTime",
-        }
-    }
-}
-
 impl GameState {
     pub fn new(_c: &EngineState) -> Self {
         Self {
@@ -389,10 +357,7 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                 });
                 if let Some(tile_map_pos) = state.selected_tile {
                     left_panel.heading(&format!("Trap on ({},{})", tile_map_pos.x, tile_map_pos.y));
-                    let trap_tile = state
-                        .trap_tiles
-                        .entry(tile_map_pos)
-                        .or_insert(TrapTile::ToBeBuild(TrapLabel::Simple));
+                    let trap_tile = state.trap_tiles.entry(tile_map_pos).or_default();
 
                     match trap_tile {
                         TrapTile::Built(trap) => match trap {
@@ -453,35 +418,11 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                                 });
                             }
                         },
-                        TrapTile::ToBeBuild(selected_trap) => {
-                            egui::ComboBox::from_label("Choose a trap")
-                                .selected_text(selected_trap.as_str())
-                                .show_ui(left_panel, |ui| {
-                                    ui.selectable_value(
-                                        selected_trap,
-                                        TrapLabel::Simple,
-                                        TrapLabel::Simple.as_str(),
-                                    );
-                                    ui.selectable_value(
-                                        selected_trap,
-                                        TrapLabel::DamageOverTime,
-                                        TrapLabel::DamageOverTime.as_str(),
-                                    );
-                                });
-                            if left_panel.button("Build").clicked() {
-                                let trap_to_be_built = TrapTile::Built(match selected_trap {
-                                    TrapLabel::Simple => Trap::Simple {
-                                        cooldown: Timer::from_seconds(1., true),
-                                        damage: 1.,
-                                    },
-                                    TrapLabel::DamageOverTime => Trap::DamageOverTime {
-                                        cooldown: Timer::from_seconds(1., true),
-                                        duration_secs: 2.,
-                                        damage_per_second: 1.,
-                                    },
-                                });
-
-                                *trap_tile = trap_to_be_built;
+                        TrapTile::ToBeBuild(trap_builder) => {
+                            if let Some(trap) =
+                                trap_builder.as_ui(left_panel, &mut state.player.gold)
+                            {
+                                *trap_tile = TrapTile::Built(trap);
                             }
                         }
                     }
