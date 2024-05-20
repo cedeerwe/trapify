@@ -1,7 +1,15 @@
 use comfy::{egui::ProgressBar, *};
 use trapify::*;
 
-simple_game!("Trapify", GameState, setup, update);
+simple_game!("Trapify", GameState, config, setup, update);
+
+fn config(config: GameConfig) -> GameConfig {
+    GameConfig {
+        // This overrides the default ResolutionConfig::Logical(1106, 526) for WASM targets
+        resolution: ResolutionConfig::Physical(1920, 1080),
+        ..config
+    }
+}
 
 pub struct GameState {
     enemies: Vec<Enemy>,
@@ -246,6 +254,7 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                     if ui.button("Reset HP").clicked() {
                         state.player.hp.reset();
                     }
+                    ui.label(&format!("FPS: {}", get_fps()))
                 });
                 if let Some(tile_map_pos) = state.selected_tile {
                     left_panel.heading(&format!("Trap on ({},{})", tile_map_pos.x, tile_map_pos.y));
