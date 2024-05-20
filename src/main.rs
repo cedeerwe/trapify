@@ -61,10 +61,12 @@ impl GameState {
                 maximum_hp: 10.,
                 speed: 1.,
                 damage: 3.,
+                gold_for_kill: 1,
             },
             enemies: vec![],
             player: Player {
                 hp: HitPoints::new_full(100.),
+                gold: 100,
             },
             is_paused: false,
             is_game_over: false,
@@ -79,6 +81,7 @@ pub struct EnemySpawner {
     maximum_hp: f32,
     speed: f32,
     damage: f32,
+    gold_for_kill: u32,
 }
 
 impl EnemySpawner {
@@ -94,6 +97,7 @@ impl EnemySpawner {
             ),
             size,
             damage_over_time_effects: vec![],
+            gold_for_kill: self.gold_for_kill,
         }
     }
 }
@@ -105,6 +109,7 @@ pub struct Enemy {
     position: Vec2,
     size: f32,
     damage_over_time_effects: Vec<DamageOverTimeEffect>,
+    gold_for_kill: u32,
 }
 
 pub struct DamageOverTimeEffect {
@@ -198,6 +203,7 @@ impl HitPoints {
 
 pub struct Player {
     hp: HitPoints,
+    gold: u32,
 }
 
 fn setup(_state: &mut GameState, _c: &mut EngineContext) {}
@@ -233,6 +239,7 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
             });
 
             if died_to_dot {
+                state.player.gold += enemy.gold_for_kill;
                 return false;
             }
 
@@ -303,7 +310,11 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                             // TODO: Potentially remake this to be more efficient using a hashmap of positions to list of enemies
                             state.enemies.retain_mut(|enemy| {
                                 if enemy.on_tiles().contains(tile_map_pos) {
-                                    return !enemy.hp.take_damage_and_die(*damage);
+                                    let is_dead = enemy.hp.take_damage_and_die(*damage);
+                                    if is_dead {
+                                        state.player.gold += enemy.gold_for_kill
+                                    }
+                                    return !is_dead;
                                 }
                                 true
                             });
@@ -362,6 +373,12 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                             ))
                             .fill(RED.into()),
                     )
+                });
+                left_panel.horizontal(|ui| {
+                    ui.label(format!("Gold: {}", state.player.gold));
+                    if ui.button("Top up 10").clicked() {
+                        state.player.gold += 10;
+                    }
                 });
                 left_panel.horizontal(|ui| {
                     ui.checkbox(&mut state.is_paused, "Paused");
@@ -493,6 +510,14 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                     ui.label("Maximum HP:");
                     ui.add(
                         egui::DragValue::new(&mut state.enemy_spawner.maximum_hp)
+                            .speed(1.0)
+                            .clamp_range(1. ..=100.),
+                    )
+                });
+                right_panel.horizontal(|ui| {
+                    ui.label("Gold for kill:");
+                    ui.add(
+                        egui::DragValue::new(&mut state.enemy_spawner.gold_for_kill)
                             .speed(1.0)
                             .clamp_range(1. ..=100.),
                     )
