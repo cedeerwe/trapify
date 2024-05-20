@@ -147,6 +147,26 @@ impl Enemy {
             11,
         );
     }
+
+    pub fn on_tiles(&self) -> HashSet<TileMapPos> {
+        // TODO: This only works if size < TILE_SIZE
+        let min_x = self.position.x - self.size / 2.;
+        let max_x = self.position.x + self.size / 2.;
+
+        // TODO: This only make sense if every enemy is in a specific row
+        let y = tile_map::y_from_absolute(self.position.y);
+
+        let mut result = HashSet::new();
+        if let Some(y) = y {
+            if let Some(x) = tile_map::x_from_absolute(min_x) {
+                result.insert(TileMapPos { x, y });
+            }
+            if let Some(x) = tile_map::x_from_absolute(max_x) {
+                result.insert(TileMapPos { x, y });
+            }
+        }
+        result
+    }
 }
 
 pub struct HitPoints {
@@ -262,43 +282,49 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                 Trap::Simple { .. } => BLUE,
                 Trap::DamageOverTime { .. } => PURPLE,
             };
-            draw_circle(tile_map_pos.into_absolute_mid(), 0.5, color, 0)
+            draw_circle(tile_map_pos.into_absolute_mid(), 0.3, color, 0)
         }
     }
 
     // deal trap damage
-    for (tile_map_pos, trap_tile) in state.trap_tiles.iter_mut() {
-        if let TrapTile::Built(trap) = trap_tile {
-            match trap {
-                Trap::Simple { cooldown, damage } => {
-                    cooldown.tick_secs(delta);
-                    if cooldown.just_finished() {
-                        draw_circle(tile_map_pos.into_absolute_mid(), 0.5, RED, 2);
-                        // TODO: Potentially remake this to be more efficient using a hashmap of positions to list of enemies
-                        state.enemies.retain_mut(|enemy| {
-                            if let Some(enemy_tile_pos) = TileMapPos::from_absolute(enemy.position)
-                            {
-                                if tile_map_pos == &enemy_tile_pos {
+    if !state.is_paused {
+        for (tile_map_pos, trap_tile) in state.trap_tiles.iter_mut() {
+            if let TrapTile::Built(trap) = trap_tile {
+                match trap {
+                    Trap::Simple { cooldown, damage } => {
+                        cooldown.tick_secs(delta);
+                        if cooldown.just_finished() {
+                            draw_rect(
+                                tile_map_pos.into_absolute_mid(),
+                                Vec2::new(tile_map::TILE_SIZE, tile_map::TILE_SIZE),
+                                RED,
+                                2,
+                            );
+                            // TODO: Potentially remake this to be more efficient using a hashmap of positions to list of enemies
+                            state.enemies.retain_mut(|enemy| {
+                                if enemy.on_tiles().contains(tile_map_pos) {
                                     return !enemy.hp.take_damage_and_die(*damage);
                                 }
-                            }
-                            true
-                        });
+                                true
+                            });
+                        }
                     }
-                }
-                Trap::DamageOverTime {
-                    cooldown,
-                    duration_secs,
-                    damage_per_second,
-                } => {
-                    cooldown.tick_secs(delta);
-                    if cooldown.just_finished() {
-                        draw_circle(tile_map_pos.into_absolute_mid(), 0.5, YELLOW, 2);
-                        // TODO: Potentially remake this to be more efficient using a hashmap of positions to list of enemies
-                        state.enemies.iter_mut().for_each(|enemy| {
-                            if let Some(enemy_tile_pos) = TileMapPos::from_absolute(enemy.position)
-                            {
-                                if tile_map_pos == &enemy_tile_pos {
+                    Trap::DamageOverTime {
+                        cooldown,
+                        duration_secs,
+                        damage_per_second,
+                    } => {
+                        cooldown.tick_secs(delta);
+                        if cooldown.just_finished() {
+                            draw_rect(
+                                tile_map_pos.into_absolute_mid(),
+                                Vec2::new(tile_map::TILE_SIZE, tile_map::TILE_SIZE),
+                                YELLOW,
+                                2,
+                            );
+                            // TODO: Potentially remake this to be more efficient using a hashmap of positions to list of enemies
+                            state.enemies.iter_mut().for_each(|enemy| {
+                                if enemy.on_tiles().contains(tile_map_pos) {
                                     enemy.damage_over_time_effects.push(DamageOverTimeEffect {
                                         timer: Timer::new(
                                             Duration::from_secs_f32(*duration_secs),
@@ -307,12 +333,15 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                                         damage_per_second: *damage_per_second,
                                     })
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 }
             }
         }
+    }
+    if is_key_pressed(KeyCode::P) {
+        state.is_paused = !state.is_paused;
     }
 
     egui::panel::TopBottomPanel::bottom("spreadsheet")
@@ -335,13 +364,7 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
                     )
                 });
                 left_panel.horizontal(|ui| {
-                    let pause_text = match state.is_paused {
-                        true => "Unpause",
-                        false => "Pause",
-                    };
-                    if ui.button(pause_text).clicked() && !state.is_game_over {
-                        state.is_paused = !state.is_paused
-                    };
+                    ui.checkbox(&mut state.is_paused, "Paused");
                     if ui.button("Reset HP").clicked() {
                         state.player.hp.reset();
                     }
