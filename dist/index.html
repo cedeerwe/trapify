@@ -1,35 +1,90 @@
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="utf-8">
-    <title>TRAPIFY</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Demo</title>
     <style>
-        html,
-        body,
         canvas {
-            margin: 0px;
-            padding: 0px;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            position: absolute;
-            background: black;
-            z-index: 0;
+            background-color: black;
         }
     </style>
 
-<link rel="modulepreload" href="/trapify-76a1fd678cd803f6.js" crossorigin=anonymous integrity="sha384-UJElsUpwN6/TP2x1LDIbk+Isv4ueflFXFfMXoHWoGQj7AAwvg5pWngxnKLY15tvm">
-<link rel="preload" href="/trapify-76a1fd678cd803f6_bg.wasm" crossorigin=anonymous integrity="sha384-UzcknTdfTns6/EVsglNUsjhyZmfHp/GBEx4ZHOOD1hXpA4N8pcvV+d/yKkPiFgzD" as="fetch" type="application/wasm"></head>
+    <script>
+        // Insert hack to make sound autoplay on Chrome as soon as the user interacts with the tab:
+        // https://developers.google.com/web/updates/2018/11/web-audio-autoplay#moving-forward
 
-<body>
-    <canvas id="glcanvas" tabindex='1'></canvas>
-    <!-- Minified and statically hosted version of https://github.com/not-fl3/miniquad/blob/master/native/sapp-wasm/js/gl.js -->
-    <script src="https://not-fl3.github.io/miniquad-samples/gl.js"></script>
-    <script>load("target/wasm32-unknown-unknown/release/trapify.wasm");</script> <!-- Your compiled wasm file -->
+        // the following function keeps track of all AudioContexts and resumes them on the first user
+        // interaction with the page. If the function is called and all contexts are already running,
+        // it will remove itself from all event listeners.
+        (function () {
+            // An array of all contexts to resume on the page
+            const audioContextList = [];
+
+            // An array of various user interaction events we should listen for
+            const userInputEventNames = [
+                "click",
+                "contextmenu",
+                "auxclick",
+                "dblclick",
+                "mousedown",
+                "mouseup",
+                "pointerup",
+                "touchend",
+                "keydown",
+                "keyup",
+            ];
+
+            // A proxy object to intercept AudioContexts and
+            // add them to the array for tracking and resuming later
+            self.AudioContext = new Proxy(self.AudioContext, {
+                construct(target, args) {
+                    const result = new target(...args);
+                    audioContextList.push(result);
+                    return result;
+                },
+            });
+
+            // To resume all AudioContexts being tracked
+            function resumeAllContexts(_event) {
+                let count = 0;
+
+                audioContextList.forEach((context) => {
+                    if (context.state !== "running") {
+                        context.resume();
+                        console.log("Resuming AudioContext:", context);
+                    } else {
+                        count++;
+                    }
+                });
+
+                // If all the AudioContexts have now resumed then we unbind all
+                // the event listeners from the page to prevent unnecessary resume attempts
+                // Checking count > 0 ensures that the user interaction happens AFTER the game started up
+                if (count > 0 && count === audioContextList.length) {
+                    userInputEventNames.forEach((eventName) => {
+                        document.removeEventListener(eventName, resumeAllContexts);
+                    });
+                }
+            }
+
+            // We bind the resume function for each user interaction
+            // event on the page
+            userInputEventNames.forEach((eventName) => {
+                document.addEventListener(eventName, resumeAllContexts);
+            });
+        })();
+    </script>
+
+<link rel="modulepreload" href="/trapify-d32ad92a0025ce4f.js" crossorigin=anonymous integrity="sha384-oyRvHJAWyLosRObpLOkhyvZoo37z24hxTuD224QQWshjyhqJp5z9QwjRrGUFhYrn">
+<link rel="preload" href="/trapify-d32ad92a0025ce4f_bg.wasm" crossorigin=anonymous integrity="sha384-eIa9R6WOXOvpp2WHjuOrJRL8JiY1bwBNjs8nEaqT2BxcEBoY60A0LqRC/3BFll0+" as="fetch" type="application/wasm"></head>
+
+<body id="wasm-body">
 
 <script type="module">
-import init, * as bindings from '/trapify-76a1fd678cd803f6.js';
-const wasm = await init('/trapify-76a1fd678cd803f6_bg.wasm');
+import init, * as bindings from '/trapify-d32ad92a0025ce4f.js';
+const wasm = await init('/trapify-d32ad92a0025ce4f_bg.wasm');
 
 
 window.wasmBindings = bindings;
@@ -37,135 +92,6 @@ window.wasmBindings = bindings;
 
 dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 
-</script><script>"use strict";
-
-(function () {
-
-    const address = '{{__TRUNK_ADDRESS__}}';
-    const base = '{{__TRUNK_WS_BASE__}}';
-    let protocol = '';
-    protocol =
-        protocol
-            ? protocol
-            : window.location.protocol === 'https:'
-                ? 'wss'
-                : 'ws';
-    const url = protocol + '://' + address + base + '.well-known/trunk/ws';
-
-    class Overlay {
-        constructor() {
-            // create an overlay
-            this._overlay = document.createElement("div");
-            const style = this._overlay.style;
-            style.height = "100vh";
-            style.width = "100vw";
-            style.position = "fixed";
-            style.top = "0";
-            style.left = "0";
-            style.backgroundColor = "rgba(222, 222, 222, 0.5)";
-            style.fontFamily = "sans-serif";
-            // not sure that's the right approach
-            style.zIndex = "1000000";
-            style.backdropFilter = "blur(1rem)";
-
-            const container = document.createElement("div");
-            // center it
-            container.style.position = "absolute";
-            container.style.top = "30%";
-            container.style.left = "15%";
-            container.style.maxWidth = "85%";
-
-            this._title = document.createElement("div");
-            this._title.innerText = "Build failure";
-            this._title.style.paddingBottom = "2rem";
-            this._title.style.fontSize = "2.5rem";
-
-            this._message = document.createElement("div");
-            this._message.style.whiteSpace = "pre-wrap";
-
-            const icon= document.createElement("div");
-            icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#dc3545" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>';
-            this._title.prepend(icon);
-
-            container.append(this._title, this._message);
-            this._overlay.append(container);
-
-            this._inject();
-            window.setInterval(() => {
-                this._inject();
-            }, 250);
-        }
-
-        set reason(reason) {
-            this._message.textContent = reason;
-        }
-
-        _inject() {
-            if (!this._overlay.isConnected) {
-                // prepend it
-                document.body?.prepend(this._overlay);
-            }
-        }
-
-    }
-
-    class Client {
-        constructor(url) {
-            this.url = url;
-            this.poll_interval = 5000;
-            this._overlay = null;
-        }
-
-        start() {
-            const ws = new WebSocket(this.url);
-            ws.onmessage = (ev) => {
-                const msg = JSON.parse(ev.data);
-                switch (msg.type) {
-                    case "reload":
-                        this.reload();
-                        break;
-                    case "buildFailure":
-                        this.buildFailure(msg.data)
-                        break;
-                }
-            };
-            ws.onclose = this.onclose;
-        }
-
-        onclose() {
-            window.setTimeout(
-                () => {
-                    // when we successfully reconnect, we'll force a
-                    // reload (since we presumably lost connection to
-                    // trunk due to it being killed, so it will have
-                    // rebuilt on restart)
-                    const ws = new WebSocket(this.url);
-                    ws.onopen = () => window.location.reload();
-                    ws.onclose = this.onclose;
-                },
-                this.poll_interval);
-        }
-
-        reload() {
-            window.location.reload();
-        }
-
-        buildFailure({reason}) {
-            // also log the console
-            console.error("Build failed:", reason);
-
-            console.debug("Overlay", this._overlay);
-
-            if (!this._overlay) {
-                this._overlay = new Overlay();
-            }
-            this._overlay.reason = reason;
-        }
-    }
-
-    new Client(url).start();
-
-})()
 </script></body>
 
 </html>
