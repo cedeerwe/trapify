@@ -1,5 +1,7 @@
 use comfy::*;
 
+use crate::*;
+
 pub enum Trap {
     Simple {
         cooldown: Timer,
@@ -10,6 +12,32 @@ pub enum Trap {
         duration_secs: f32,
         damage_per_second: f32,
     },
+    // Slow {
+    //     cooldown: Timer,
+    //     duration_secs: f32,
+    //     slow_effect: f32,
+    //     area: u32,
+    // },
+}
+
+impl Trap {
+    pub fn draw(&self, tile_map_pos: TileMapPos) {
+        let color = match self {
+            Trap::Simple { .. } => BLUE,
+            Trap::DamageOverTime { .. } => PURPLE,
+            // Trap::Slow { .. } => ORANGE,
+        };
+        draw_circle(tile_map_pos.into_absolute_mid(), 0.3, color, 0)
+    }
+
+    pub fn draw_activation_effect(tile_map_pos: TileMapPos, color: Color) {
+        draw_rect(
+            tile_map_pos.into_absolute_mid(),
+            Vec2::new(tile_map::TILE_SIZE, tile_map::TILE_SIZE),
+            color,
+            2,
+        )
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -146,5 +174,145 @@ pub enum TrapTile {
 impl Default for TrapTile {
     fn default() -> Self {
         Self::ToBeBuild(TrapBuilder::default())
+    }
+}
+
+impl TrapTile {
+    pub fn debug_ui(&mut self, ui: &mut egui::Ui, player_gold: &mut u32) {
+        match self {
+            TrapTile::Built(trap) => match trap {
+                Trap::Simple { cooldown, damage } => {
+                    ui.label("Simple");
+                    ui.horizontal(|ui| {
+                        ui.label("Damage:");
+                        ui.add(
+                            egui::DragValue::new(damage)
+                                .speed(1.0)
+                                .clamp_range(1. ..=100.),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Frequency (s):");
+                        let mut trigger_cooldown = cooldown.duration().as_secs_f32();
+                        ui.add(
+                            egui::DragValue::new(&mut trigger_cooldown)
+                                .speed(0.1)
+                                .clamp_range(0.1..=100.),
+                        );
+                        cooldown.set_duration(Duration::from_secs_f32(trigger_cooldown));
+                    });
+                }
+                Trap::DamageOverTime {
+                    cooldown,
+                    duration_secs,
+                    damage_per_second,
+                } => {
+                    ui.label("Damage over time");
+                    ui.horizontal(|ui| {
+                        ui.label("Damage per second:");
+                        ui.add(
+                            egui::DragValue::new(damage_per_second)
+                                .speed(1.0)
+                                .clamp_range(1. ..=100.),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Duration (s):");
+                        ui.add(
+                            egui::DragValue::new(duration_secs)
+                                .speed(1.0)
+                                .clamp_range(1. ..=100.),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Frequency (s):");
+                        let mut trigger_cooldown = cooldown.duration().as_secs_f32();
+                        ui.add(
+                            egui::DragValue::new(&mut trigger_cooldown)
+                                .speed(0.1)
+                                .clamp_range(0.1..=100.),
+                        );
+                        cooldown.set_duration(Duration::from_secs_f32(trigger_cooldown));
+                    });
+                }
+            },
+            TrapTile::ToBeBuild(trap_builder) => {
+                if let Some(trap) = trap_builder.as_ui(ui, player_gold) {
+                    *self = TrapTile::Built(trap);
+                }
+            }
+        }
+    }
+}
+
+impl GameState {
+    pub fn draw_traps(&self) {
+        for (tile_map_pos, trap_tile) in self.trap_tiles.iter() {
+            if let TrapTile::Built(trap) = trap_tile {
+                trap.draw(*tile_map_pos)
+            }
+        }
+    }
+
+    pub fn activate_traps(&mut self) {
+        if self.is_paused {
+            return;
+        }
+
+        for (tile_map_pos, trap_tile) in self.trap_tiles.iter_mut() {
+            if let TrapTile::Built(trap) = trap_tile {
+                match trap {
+                    Trap::Simple { cooldown, damage } => {
+                        cooldown.tick_secs(self.delta);
+                        if cooldown.just_finished() {
+                            Trap::draw_activation_effect(*tile_map_pos, RED);
+                            // TODO: Potentially remake this to be more efficient using a hashmap of positions to list of enemies
+                            self.enemies.iter_mut().for_each(|enemy| {
+                                if enemy.on_tiles().contains(tile_map_pos) {
+                                    enemy.hp.take_damage(*damage)
+                                }
+                            });
+                        }
+                    }
+                    Trap::DamageOverTime {
+                        cooldown,
+                        duration_secs,
+                        damage_per_second,
+                    } => {
+                        cooldown.tick_secs(self.delta);
+                        if cooldown.just_finished() {
+                            Trap::draw_activation_effect(*tile_map_pos, YELLOW);
+                            // TODO: Potentially remake this to be more efficient using a hashmap of positions to list of enemies
+                            self.enemies.iter_mut().for_each(|enemy| {
+                                if enemy.on_tiles().contains(tile_map_pos) {
+                                    enemy.damage_over_time_effects.push(DamageOverTimeEffect {
+                                        timer: Timer::new(
+                                            Duration::from_secs_f32(*duration_secs),
+                                            false,
+                                        ),
+                                        damage_per_second: *damage_per_second,
+                                    })
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn selected_tile_debug_ui(&mut self, ui: &mut egui::Ui) {
+        match self.selected_tile {
+            None => {
+                ui.heading("No tile selected");
+            }
+            Some(tile_map_pos) => {
+                ui.heading(&format!("Trap on ({},{})", tile_map_pos.x, tile_map_pos.y));
+                self.trap_tiles
+                    .entry(tile_map_pos)
+                    .or_default()
+                    .debug_ui(ui, &mut self.player.gold);
+            }
+        }
     }
 }

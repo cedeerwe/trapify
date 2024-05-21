@@ -1,5 +1,7 @@
 use comfy::*;
 
+use crate::GameState;
+
 pub const TILE_SIZE: f32 = 1.; // This is in world coordinates
 pub const ROWS: u32 = 5;
 pub const COLUMNS: u32 = 28; // ZOOM is setup to 30, 1 margin on both sides
@@ -116,6 +118,20 @@ impl TileMapPos {
         Vec2 {
             x: x_into_absolute_mid(self.x),
             y: y_into_absolute_mid(self.y),
+        }
+    }
+}
+
+impl GameState {
+    pub fn draw_tilemap(&self) {
+        draw();
+        if let Some(tile_map_pos) = self.selected_tile.as_ref() {
+            draw_rect(
+                tile_map_pos.into_absolute_mid(),
+                Vec2::new(TILE_SIZE, TILE_SIZE),
+                PINK,
+                0,
+            );
         }
     }
 }
