@@ -32,4 +32,15 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
     state.apply_gold_interest();
 
     state.ui();
+
+    // Hack to have lower FPS in wasm -- add additional computation
+    // The numbers are picked so that on my M1 Pro Mac I have ~100 FPS
+    #[cfg(target_arch = "wasm32")]
+    {
+        let mut x = vec![];
+        for i in 1..3000000 {
+            x.push(i)
+        }
+        x.sort();
+    }
 }
