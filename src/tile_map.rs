@@ -120,6 +120,46 @@ impl TileMapPos {
             y: y_into_absolute_mid(self.y),
         }
     }
+
+    pub fn neighbors(self) -> Vec<TileMapPos> {
+        let mut result = Vec::new();
+        if self.x > 0 {
+            result.push(TileMapPos::new(self.x - 1, self.y));
+        }
+        if self.y > 0 {
+            result.push(TileMapPos::new(self.x, self.y - 1));
+        }
+        if self.x < COLUMNS - 1 {
+            result.push(TileMapPos::new(self.x + 1, self.y));
+        }
+        if self.y < ROWS - 1 {
+            result.push(TileMapPos::new(self.x, self.y + 1));
+        }
+        result
+    }
+
+    pub fn l1_distance(&self, other: TileMapPos) -> u32 {
+        self.x.abs_diff(other.x) + self.y.abs_diff(other.y)
+    }
+
+    pub fn area_til_distance(self, distance: u32) -> HashSet<TileMapPos> {
+        let mut tried = HashSet::new();
+        let mut stack = vec![self];
+        let mut result = HashSet::new();
+
+        while let Some(x) = stack.pop() {
+            if tried.contains(&x) {
+                continue;
+            }
+            tried.insert(x);
+            if self.l1_distance(x) > distance {
+                continue;
+            }
+            result.insert(x);
+            stack.extend(x.neighbors())
+        }
+        result
+    }
 }
 
 impl GameState {

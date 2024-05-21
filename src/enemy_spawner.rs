@@ -48,6 +48,7 @@ impl EnemySpawner {
             size,
             damage_over_time_effects: vec![],
             gold_for_kill: self.gold_for_kill,
+            slow_effects: vec![],
         }
     }
 

@@ -10,6 +10,7 @@ pub struct Enemy {
     pub size: f32,
     pub damage_over_time_effects: Vec<DamageOverTimeEffect>,
     pub gold_for_kill: u32,
+    pub slow_effects: Vec<SlowEffect>,
 }
 
 pub struct DamageOverTimeEffect {
@@ -17,9 +18,20 @@ pub struct DamageOverTimeEffect {
     pub damage_per_second: f32,
 }
 
+pub struct SlowEffect {
+    pub timer: Timer,
+    pub strength: f32,
+}
+
 impl Enemy {
     pub fn move_and_deal_damage(&mut self, delta_secs: f32) -> Option<f32> {
-        self.position.x += self.speed * delta_secs;
+        self.slow_effects.retain_mut(|effect| {
+            effect.timer.tick_secs(delta_secs);
+            !effect.timer.just_finished()
+        });
+        let total_slow_effect: f32 = self.slow_effects.iter().map(|effect| effect.strength).sum();
+        let speed = self.speed / (1. + total_slow_effect);
+        self.position.x += speed * delta_secs;
         match self.position.x >= tile_map::x_max() {
             true => Some(self.damage),
             false => None,
