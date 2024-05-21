@@ -8,8 +8,10 @@ Clone the repository locally and do
 ```
 cargo run
 ```
+[In theory](https://comfyengine.org/book/releasing/) it should also be possible to use `trunk serve`, but [WASM has FPS issues](https://github.com/darthdeus/comfy/issues/100).
 
 ## TODO:
+
 ### v0.1
 - [x] Create a tilemap
 - [x] Have enemies randomly spawn and move through the map
@@ -38,3 +40,6 @@ cargo run
 - [ ] Configurable triggering of traps
 ### v0.4
 - [ ] Introduce loot -- content which isn't available on every run
+
+### Other stuff
+- [ ] Fix Wasm version to not have FPS ~1000 and be playable
