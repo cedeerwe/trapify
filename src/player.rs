@@ -11,6 +11,13 @@ pub struct Gold {
     pub value: f32,
     pub interest_cooldown: Timer,
     pub interest_size: f32,
+    pub max_interest_gainable: f32,
+}
+
+impl Gold {
+    pub fn interest_to_gain(&self) -> f32 {
+        (self.value * self.interest_size).min(self.max_interest_gainable)
+    }
 }
 
 impl Player {
@@ -37,8 +44,14 @@ impl Player {
         ui.horizontal(|ui| {
             ui.label(format!("Interest: {:.2}%", self.gold.interest_size * 100.));
             ui.label(format!(
-                "\tNext interest size: {:.2}",
-                self.gold.interest_size * self.gold.value
+                "\t Maximum to gain: {:.2}%",
+                self.gold.max_interest_gainable
+            ));
+        });
+        ui.horizontal(|ui| {
+            ui.label(format!(
+                "Next interest size: {:.2}",
+                self.gold.interest_to_gain()
             ));
             ui.add(
                 egui::ProgressBar::new(self.gold.interest_cooldown.percent_left()).text(format!(
@@ -67,7 +80,7 @@ impl GameState {
         }
         self.player.gold.interest_cooldown.tick_secs(self.delta);
         if self.player.gold.interest_cooldown.just_finished() {
-            self.player.gold.value += self.player.gold.value * self.player.gold.interest_size
+            self.player.gold.value += self.player.gold.interest_to_gain()
         }
     }
 }

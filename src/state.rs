@@ -26,6 +26,7 @@ impl Default for GameState {
                     value: 100.,
                     interest_cooldown: Timer::from_seconds(10., true),
                     interest_size: 0.1,
+                    max_interest_gainable: 50.,
                 },
             },
             is_paused: false,
