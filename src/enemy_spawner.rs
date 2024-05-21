@@ -8,6 +8,15 @@ pub struct EnemySpawner {
     speed: f32,
     damage: f32,
     gold_for_kill: f32,
+    progression: EnemySpawnerProgression,
+}
+
+pub struct EnemySpawnerProgression {
+    timer: Timer,
+    maximum_hp_increase: f32,
+    speed_increase: f32,
+    damage_increase: f32,
+    gold_for_kill_increase: f32,
 }
 
 impl Default for EnemySpawner {
@@ -18,6 +27,13 @@ impl Default for EnemySpawner {
             speed: 1.,
             damage: 3.,
             gold_for_kill: 1.,
+            progression: EnemySpawnerProgression {
+                timer: Timer::from_seconds(30., true),
+                maximum_hp_increase: 0.3,
+                speed_increase: 0.1,
+                damage_increase: 0.2,
+                gold_for_kill_increase: 0.1,
+            },
         }
     }
 }
@@ -27,6 +43,16 @@ impl GameState {
         if self.is_paused {
             return;
         }
+        self.enemy_spawner.progression.timer.tick_secs(self.delta);
+        if self.enemy_spawner.progression.timer.just_finished() {
+            self.enemy_spawner.damage *= 1. + self.enemy_spawner.progression.damage_increase;
+            self.enemy_spawner.gold_for_kill *=
+                1. + self.enemy_spawner.progression.gold_for_kill_increase;
+            self.enemy_spawner.speed *= 1. + self.enemy_spawner.progression.speed_increase;
+            self.enemy_spawner.maximum_hp *=
+                1. + self.enemy_spawner.progression.maximum_hp_increase;
+        }
+
         self.enemy_spawner.timer.tick_secs(self.delta);
         if self.enemy_spawner.timer.just_finished() {
             self.enemies.push(self.enemy_spawner.spawn_single())
@@ -97,6 +123,53 @@ impl EnemySpawner {
             );
             self.timer
                 .set_duration(Duration::from_secs_f32(spawn_cooldown));
+        });
+
+        ui.separator();
+        ui.heading("Enemy spawner progression");
+        ui.separator();
+        ui.horizontal(|ui| {
+            ui.label("Damage Increase:");
+            ui.add(
+                egui::DragValue::new(&mut self.progression.damage_increase)
+                    .speed(0.01)
+                    .clamp_range(0.01..=1.),
+            )
+        });
+        ui.horizontal(|ui| {
+            ui.label("Speed Increase:");
+            ui.add(
+                egui::DragValue::new(&mut self.progression.speed_increase)
+                    .speed(0.01)
+                    .clamp_range(0.01..=1.),
+            )
+        });
+        ui.horizontal(|ui| {
+            ui.label("Maximum HP Increase:");
+            ui.add(
+                egui::DragValue::new(&mut self.progression.maximum_hp_increase)
+                    .speed(0.01)
+                    .clamp_range(0.01..=1.),
+            )
+        });
+        ui.horizontal(|ui| {
+            ui.label("Gold for Kill Increase:");
+            ui.add(
+                egui::DragValue::new(&mut self.progression.gold_for_kill_increase)
+                    .speed(0.01)
+                    .clamp_range(0.01..=1.),
+            )
+        });
+        ui.horizontal(|ui| {
+            ui.label("Next increase:");
+            ui.add(
+                egui::ProgressBar::new(self.progression.timer.percent_left()).text(format!(
+                    "{:.2}s / {:.2}s",
+                    (self.progression.timer.duration() - self.progression.timer.elapsed())
+                        .as_secs_f32(),
+                    self.progression.timer.duration().as_secs_f32()
+                )),
+            )
         });
     }
 }

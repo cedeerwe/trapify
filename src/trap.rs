@@ -295,8 +295,8 @@ impl TrapTile {
                         ui.label("Slow effect");
                         ui.add(
                             egui::DragValue::new(slow_effect)
-                                .speed(1.)
-                                .clamp_range(1. ..=100.),
+                                .speed(0.01)
+                                .clamp_range(0.01..=1.),
                         );
                     });
                     ui.horizontal(|ui| {

@@ -28,6 +28,6 @@ impl HitPoints {
     }
 
     pub fn as_text(&self) -> String {
-        format!("{} / {}", self.current, self.maximum)
+        format!("{:.2} / {:.2}", self.current, self.maximum)
     }
 }

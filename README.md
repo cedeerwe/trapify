@@ -28,7 +28,7 @@ cargo run
 - [x] Introduce Slow trap -- applies slow effect in an area
 - [x] Count how long the player lasted and show it in the game over screen
 - [x] Income based on current gold
-- [ ] Have enemies become progressively stronger
+- [x] Have enemies become progressively stronger
 - [ ] Separate two game modes -- sandbox & normal
 - [ ] Adjust parameters to be able to play the actual game
 ### v0.2
