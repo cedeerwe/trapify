@@ -26,7 +26,7 @@ cargo run
 - [x] Make traps visually show when they trigger
 - [x] Introduce gold -- traps cost gold to build and player receives gold for slaying enemies
 - [x] Introduce Slow trap -- applies slow effect in an area
-- [ ] Count how long the player lasted and show it in the game over screen
+- [x] Count how long the player lasted and show it in the game over screen
 - [ ] Income based on current gold
 - [ ] Have enemies become progressively stronger
 - [ ] Separate two game modes -- sandbox & normal

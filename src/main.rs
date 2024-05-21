@@ -14,7 +14,7 @@ fn config(config: GameConfig) -> GameConfig {
 fn setup(_state: &mut GameState, _c: &mut EngineContext) {}
 
 fn update(state: &mut GameState, _c: &mut EngineContext) {
-    state.delta = delta();
+    state.passage_of_time();
 
     state.draw();
     state.check_inputs();

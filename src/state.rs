@@ -10,6 +10,7 @@ pub struct GameState {
     pub is_game_over: bool,
     pub selected_tile: Option<TileMapPos>,
     pub trap_tiles: HashMap<TileMapPos, TrapTile>,
+    pub run_length_seconds: f32,
 }
 
 impl Default for GameState {
@@ -27,6 +28,7 @@ impl Default for GameState {
             is_game_over: false,
             selected_tile: None,
             trap_tiles: HashMap::default(),
+            run_length_seconds: 0.,
         }
     }
 }
@@ -38,6 +40,13 @@ impl GameState {
 
     pub fn restart(&mut self) {
         *self = Self::default();
+    }
+
+    pub fn passage_of_time(&mut self) {
+        self.delta = delta();
+        if !self.is_paused {
+            self.run_length_seconds += self.delta
+        }
     }
 
     pub fn draw(&self) {
@@ -53,6 +62,10 @@ impl GameState {
                 .anchor(Align2::CENTER_TOP, [0., 0.])
                 .collapsible(false)
                 .show(egui(), |ui| {
+                    ui.label(&format!(
+                        "You have lasted for {}",
+                        self.run_length_formatted()
+                    ));
                     if ui.button("Restart game").clicked() {
                         self.restart()
                     }
@@ -73,7 +86,8 @@ impl GameState {
     pub fn general_debug_ui(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.checkbox(&mut self.is_paused, "Paused");
-            ui.label(&format!("FPS: {}", get_fps()))
+            ui.label(&format!("FPS: {}", get_fps()));
+            ui.label(&format!("\tRun Length: {}", self.run_length_formatted()));
         });
     }
 
@@ -91,5 +105,14 @@ impl GameState {
                     self.enemy_spawner.debug_ui(right_panel)
                 });
             });
+    }
+
+    pub fn run_length_formatted(&self) -> String {
+        format!(
+            "{:02.0}:{:02.0}:{:02.0}",
+            self.run_length_seconds.div_euclid(60.),
+            self.run_length_seconds.div_euclid(1.),
+            self.run_length_seconds.rem_euclid(1.) * 100.,
+        )
     }
 }
