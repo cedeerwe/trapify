@@ -14,6 +14,9 @@ fn config(config: GameConfig) -> GameConfig {
 fn setup(_state: &mut GameState, _c: &mut EngineContext) {}
 
 fn update(state: &mut GameState, _c: &mut EngineContext) {
+    #[cfg(target_arch = "wasm32")]
+    let start_time = web_sys::window().unwrap().performance().unwrap().now();
+
     state.passage_of_time();
 
     state.draw();
@@ -36,11 +39,10 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
     // Hack to have lower FPS in wasm -- add additional computation
     // The numbers are picked so that on my M1 Pro Mac I have ~100 FPS
     #[cfg(target_arch = "wasm32")]
-    {
-        let mut x = vec![];
-        for i in 1..3000000 {
-            x.push(i)
+    loop {
+        let current_time = web_sys::window().unwrap().performance().unwrap().now();
+        if current_time - start_time >= 16. {
+            break;
         }
-        x.sort();
     }
 }
