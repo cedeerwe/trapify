@@ -22,7 +22,11 @@ impl Default for GameState {
             enemies: vec![],
             player: Player {
                 hp: HitPoints::new_full(100.),
-                gold: 100,
+                gold: Gold {
+                    value: 100.,
+                    interest_cooldown: Timer::from_seconds(10., true),
+                    interest_size: 0.1,
+                },
             },
             is_paused: false,
             is_game_over: false,

@@ -7,7 +7,7 @@ pub struct EnemySpawner {
     maximum_hp: f32,
     speed: f32,
     damage: f32,
-    gold_for_kill: u32,
+    gold_for_kill: f32,
 }
 
 impl Default for EnemySpawner {
@@ -17,7 +17,7 @@ impl Default for EnemySpawner {
             maximum_hp: 10.,
             speed: 1.,
             damage: 3.,
-            gold_for_kill: 1,
+            gold_for_kill: 1.,
         }
     }
 }

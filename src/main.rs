@@ -29,5 +29,7 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
     state.check_dead_player();
     state.check_game_over();
 
+    state.apply_gold_interest();
+
     state.ui();
 }

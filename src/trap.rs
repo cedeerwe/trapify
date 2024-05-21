@@ -45,20 +45,20 @@ pub enum TrapBuilder {
     Simple {
         cooldown_secs: f32,
         damage: f32,
-        gold_cost: u32,
+        gold_cost: f32,
     },
     DamageOverTime {
         cooldown_secs: f32,
         duration_secs: f32,
         damage_per_second: f32,
-        gold_cost: u32,
+        gold_cost: f32,
     },
     Slow {
         cooldown_secs: f32,
         duration_secs: f32,
         slow_effect: f32,
         area: u32,
-        gold_cost: u32,
+        gold_cost: f32,
     },
 }
 
@@ -67,7 +67,7 @@ impl TrapBuilder {
         Self::Simple {
             cooldown_secs: 1.,
             damage: 2.,
-            gold_cost: 10,
+            gold_cost: 10.,
         }
     }
 
@@ -76,7 +76,7 @@ impl TrapBuilder {
             cooldown_secs: 1.,
             duration_secs: 2.,
             damage_per_second: 2.,
-            gold_cost: 20,
+            gold_cost: 20.,
         }
     }
 
@@ -86,7 +86,7 @@ impl TrapBuilder {
             duration_secs: 2.,
             slow_effect: 0.2,
             area: 1,
-            gold_cost: 30,
+            gold_cost: 30.,
         }
     }
 }
@@ -141,7 +141,7 @@ impl TrapBuilder {
         }
     }
 
-    pub fn as_ui(&mut self, ui: &mut egui::Ui, player_gold: &mut u32) -> Option<Trap> {
+    pub fn as_ui(&mut self, ui: &mut egui::Ui, player_gold: &mut f32) -> Option<Trap> {
         egui::ComboBox::from_label("Choose a trap")
             .selected_text(self.name())
             .show_ui(ui, |ui| {
@@ -227,7 +227,7 @@ impl Default for TrapTile {
 }
 
 impl TrapTile {
-    pub fn debug_ui(&mut self, ui: &mut egui::Ui, player_gold: &mut u32) {
+    pub fn debug_ui(&mut self, ui: &mut egui::Ui, player_gold: &mut f32) {
         match self {
             TrapTile::Built(trap) => match trap {
                 Trap::Simple { cooldown, damage } => {
@@ -421,7 +421,7 @@ impl GameState {
                 self.trap_tiles
                     .entry(tile_map_pos)
                     .or_default()
-                    .debug_ui(ui, &mut self.player.gold);
+                    .debug_ui(ui, &mut self.player.gold.value);
             }
         }
     }

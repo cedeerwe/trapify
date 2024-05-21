@@ -4,7 +4,13 @@ use crate::{GameState, HitPoints};
 
 pub struct Player {
     pub hp: HitPoints,
-    pub gold: u32,
+    pub gold: Gold,
+}
+
+pub struct Gold {
+    pub value: f32,
+    pub interest_cooldown: Timer,
+    pub interest_size: f32,
 }
 
 impl Player {
@@ -24,9 +30,25 @@ impl Player {
         });
         ui.horizontal(|ui| {
             if ui.button("Top up 10").clicked() {
-                self.gold += 10;
+                self.gold.value += 10.;
             }
-            ui.label(format!("Gold: {}", self.gold));
+            ui.label(format!("Gold: {}", self.gold.value));
+        });
+        ui.horizontal(|ui| {
+            ui.label(format!("Interest: {:.2}%", self.gold.interest_size * 100.));
+            ui.label(format!(
+                "\tNext interest size: {:.2}",
+                self.gold.interest_size * self.gold.value
+            ));
+            ui.add(
+                egui::ProgressBar::new(self.gold.interest_cooldown.percent_left()).text(format!(
+                    "{:.2}s / {:.2}s",
+                    (self.gold.interest_cooldown.duration()
+                        - self.gold.interest_cooldown.elapsed())
+                    .as_secs_f32(),
+                    self.gold.interest_cooldown.duration().as_secs_f32()
+                )),
+            );
         });
     }
 }
@@ -36,6 +58,16 @@ impl GameState {
         if self.player.hp.is_dead() {
             self.is_game_over = true;
             self.is_paused = true;
+        }
+    }
+
+    pub fn apply_gold_interest(&mut self) {
+        if self.is_paused {
+            return;
+        }
+        self.player.gold.interest_cooldown.tick_secs(self.delta);
+        if self.player.gold.interest_cooldown.just_finished() {
+            self.player.gold.value += self.player.gold.value * self.player.gold.interest_size
         }
     }
 }

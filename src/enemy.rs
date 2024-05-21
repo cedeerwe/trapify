@@ -9,7 +9,7 @@ pub struct Enemy {
     pub position: Vec2,
     pub size: f32,
     pub damage_over_time_effects: Vec<DamageOverTimeEffect>,
-    pub gold_for_kill: u32,
+    pub gold_for_kill: f32,
     pub slow_effects: Vec<SlowEffect>,
 }
 
@@ -94,7 +94,7 @@ impl GameState {
         self.enemies.retain(|enemy| {
             let is_dead = enemy.hp.is_dead();
             if is_dead {
-                self.player.gold += enemy.gold_for_kill
+                self.player.gold.value += enemy.gold_for_kill
             }
             !is_dead
         })
