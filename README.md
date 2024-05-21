@@ -10,6 +10,8 @@ cargo run
 ```
 [In theory](https://comfyengine.org/book/releasing/) it should also be possible to use `trunk serve`, but [WASM has FPS issues](https://github.com/darthdeus/comfy/issues/100).
 
+UPDATE: `trunk serve` now works using a hack. Also, the game is available to play on [github-pages](https://cedeerwe.github.io/trapify/). Note that it is currently optimized for PC, not for mobile.
+
 ## TODO:
 
 ### v0.1
@@ -42,4 +44,5 @@ cargo run
 - [ ] Introduce loot -- content which isn't available on every run
 
 ### Other stuff
-- [ ] Fix Wasm version to not have FPS ~1000 and be playable
+- [x] Fix Wasm version to not have FPS ~1000 and be playable: HACKED
+- [ ] Fix resolutions / UI to work on mobile web as well

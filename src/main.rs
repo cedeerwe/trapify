@@ -36,8 +36,7 @@ fn update(state: &mut GameState, _c: &mut EngineContext) {
 
     state.ui();
 
-    // Hack to have lower FPS in wasm -- add additional computation
-    // The numbers are picked so that on my M1 Pro Mac I have ~100 FPS
+    // Hack to have lower FPS in wasm -- wait until 16 ms have passed since the beginning of update
     #[cfg(target_arch = "wasm32")]
     loop {
         let current_time = web_sys::window().unwrap().performance().unwrap().now();
