@@ -98,16 +98,22 @@ impl GameState {
 
     pub fn ui(&mut self) {
         egui::panel::TopBottomPanel::bottom("spreadsheet")
-            .exact_height(300.) // TODO: This shouldn't be absolute
+            .min_height(300.)
             .show(egui(), |ui| {
                 ui.columns(2, |columns| {
                     let left_panel = &mut columns[0];
-                    self.general_debug_ui(left_panel);
-                    self.player.debug_ui(left_panel);
-                    self.selected_tile_debug_ui(left_panel);
+                    egui::ScrollArea::vertical()
+                        .id_source("Left scroll")
+                        .show(left_panel, |ui| {
+                            self.general_debug_ui(ui);
+                            self.player.debug_ui(ui);
+                            self.selected_tile_debug_ui(ui);
+                        });
 
                     let right_panel = &mut columns[1];
-                    self.enemy_spawner.debug_ui(right_panel)
+                    egui::ScrollArea::vertical()
+                        .id_source("Right scroll")
+                        .show(right_panel, |ui| self.enemy_spawner.debug_ui(ui));
                 });
             });
     }
